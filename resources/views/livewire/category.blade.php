@@ -4,13 +4,22 @@
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg px-4 py-4">
             @include('flash-message')
 
-            <button wire:click="create()"
-                    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-3">New Category
-            </button>
-
             @if($isOpen)
                 @include('livewire.create')
             @endif
+
+            <div class="flex flex-row shrink-0 flex-grow items-start">
+                <button wire:click="create()"
+                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-3">New Category
+                </button>
+
+                <div class="w-1/4 relative ml-auto">
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                        <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <input type="search" wire:model="search" class="block w-full p-3 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search" required>
+                </div>
+            </div>
 
             <table class="w-full">
                 <thead>
@@ -25,9 +34,8 @@
                 </tr>
                 </thead>
                 <tbody>
-                @if ($categories && count($categories) > 0)
-                    @foreach($categories as $category)
-                        <tr>
+                    @forelse($categories as $category)
+                        <tr wire:loading.class.delay="opacity-50">
                             <td class="border px-4 py-2">{{ $category->id }}</td>
                             <td class="border px-4 py-2">{{ $category->name }}</td>
                             <td class="border px-4 py-2 text-xs">
@@ -70,18 +78,19 @@
                                 {{--                                <button wire:click="delete({{ $category->id }})" class="bg-red-500 hover:bg-red-700 text-white font-bold py-1.5 px-2.5 rounded">Delete</button>--}}
                             </td>
                         </tr>
-                    @endforeach
-                @else
-                    <tr>
-                        <td colspan="6" class="py-5 text-center">
-                            No Categories Found.
-                        </td>
-                    </tr>
-                @endif
+                    @empty
+                        <tr>
+                            <td colspan="7" class="py-5 text-center">
+                                No Categories Found.
+                            </td>
+                        </tr>
+                    @endforelse
                 </tbody>
             </table>
 
-            {{ $categories->links() }}
+            <div class="pagination my-5">
+                {{ $categories->links() }}
+            </div>
 
         </div>
     </div>

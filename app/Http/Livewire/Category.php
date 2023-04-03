@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use App\Models\Category as Categories;
 use Illuminate\Support\Str;
@@ -13,7 +14,7 @@ class Category extends Component
     use WithFileUploads;
     use WithPagination;
 
-    public $name, $description, $slug, $parent_id, $image, $status, $category_id;
+    public $search = '', $name, $description, $slug, $parent_id, $image, $status, $category_id;
     public $isOpen = 0;
     protected $listeners = ['delete'];
 
@@ -27,12 +28,8 @@ class Category extends Component
 
     public function render()
     {
-//        $this->categories = Categories::all();
-//        $this->categories = Categories::paginate(10);
-
-//        $this->categories = Categories::select('id','name','slug','description','image','status','parent_id','created_at','updated_at')->get();
         return view('livewire.category',  [
-            'categories' => Categories::paginate(10)
+            'categories' => Categories::search('name', $this->search)->paginate(10)
         ]);
     }
 
