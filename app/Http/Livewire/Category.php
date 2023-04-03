@@ -5,10 +5,15 @@ namespace App\Http\Livewire;
 use Livewire\Component;
 use App\Models\Category as Categories;
 use Illuminate\Support\Str;
+use Livewire\WithFileUploads;
+use Livewire\WithPagination;
 
 class Category extends Component
 {
-    public $categories, $name, $description, $slug, $parent_id, $image, $status, $category_id;
+    use WithFileUploads;
+    use WithPagination;
+
+    public $name, $description, $slug, $parent_id, $image, $status, $category_id;
     public $isOpen = 0;
     protected $listeners = ['delete'];
 
@@ -16,13 +21,19 @@ class Category extends Component
         'name' => 'required|min:3',
         'description' => 'required|min:3',
         'slug' => 'unique:categories',
+        'image' => 'nullable|file|mimes:png,jpg|max:1024', // 1MB Max
+        'status' => 'boolean',
     ];
 
     public function render()
     {
-        $this->categories = Categories::all();
+//        $this->categories = Categories::all();
+//        $this->categories = Categories::paginate(10);
+
 //        $this->categories = Categories::select('id','name','slug','description','image','status','parent_id','created_at','updated_at')->get();
-        return view('livewire.category');
+        return view('livewire.category',  [
+            'categories' => Categories::paginate(10)
+        ]);
     }
 
     public function create()
@@ -48,11 +59,22 @@ class Category extends Component
         $this->description = '';
         $this->parent_id = '';
         $this->image = '';
-        $this->status = '';
+        $this->status = true;
     }
 
     public function store()
     {
+        if ($this->category_id) {
+            $this->id = $this->category_id;
+            $original = Categories::find($this->category_id)->first();
+
+            // If it already has slug and is still the same, don't validate it
+            if ($original && $original->slug == Str::slug($this->name)) {
+                unset($this->rules['slug']);
+            }
+        }
+
+        // Slug is idempotent, so we can regenerate it all the time
         $this->slug = Str::slug($this->name);
         $this->status = $this->status ? 1 : 0;
 
@@ -64,6 +86,11 @@ class Category extends Component
         }
 
         try {
+            if ($this->image) {
+                $this->image->store('public/images');
+                $this->image = $this->image->hashName();
+            }
+
             Categories::updateOrCreate(['id' => $this->id], [
                 'slug' => $this->slug,
                 'name' => $this->name,
@@ -110,5 +137,10 @@ class Category extends Component
                 session()->flash('error', 'Something goes wrong while deleting category!!');
             }
         }
+    }
+
+    public function removeImage()
+    {
+        $this->image = '';
     }
 }
