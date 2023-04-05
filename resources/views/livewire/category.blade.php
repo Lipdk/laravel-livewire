@@ -4,33 +4,51 @@
         <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg px-4 py-4">
             @include('flash-message')
 
-            @if($isOpen)
-                @include('livewire.create')
-            @endif
+            <div>
+                @if($showEditModal)
+                    @include('livewire.create')
+                @endif
+            </div>
 
-            <div class="flex flex-row shrink-0 flex-grow items-start">
-                <button wire:click="create()"
-                        class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-3">New Category
-                </button>
 
-                <div class="w-1/4 relative ml-auto">
-                    <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                        <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            <div class="flex justify-between mb-4">
+                <div class="w-2/4 flex space-x-4 items-center">
+                    <div class="w-1/2 relative h-12">
+                        <div class="absolute inset-y-0 flex left-0 pl-3 pointer-events-none items-center">
+                            <svg aria-hidden="true" class="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="search" wire:model="filters.search" class="block w-full p-3 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search" required>
                     </div>
-                    <input type="search" wire:model="search" class="block w-full p-3 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" placeholder="Search" required>
+                    <div>
+                        <x-button.link wire:click="toggleShowFilters">
+                            @if($showFilters) Hide @else Show @endif Advanced Search..
+                        </x-button.link>
+                    </div>
                 </div>
+
+                <div>
+                    <button wire:click="create()"
+                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded my-3">New Category
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                @if($showFilters)
+                    @include('livewire.filters')
+                @endif
             </div>
 
             <table class="w-full">
                 <thead>
                 <tr class="bg-gray-100">
-                    <th class="px-4 py-2 w-12">#</th>
-                    <th class="px-4 py-2">Name</th>
-                    <th class="px-4 py-2">Slug</th>
-                    <th class="px-4 py-2">Description</th>
-                    <th class="px-4 py-2">Image</th>
-                    <th class="px-4 py-2">Status</th>
-                    <th class="px-4 py-2">Action</th>
+                    <x-table.heading sortable :direction="$sortField === 'id' ? $sortDirection : null" wire:click="sortBy('id')" class="px-4 py-2 w-12">#</x-table.heading>
+                    <x-table.heading sortable :direction="$sortField === 'name' ? $sortDirection : null" wire:click="sortBy('name')" class="px-4 py-2">Name</x-table.heading>
+                    <x-table.heading sortable :direction="$sortField === 'slug' ? $sortDirection : null" wire:click="sortBy('slug')" class="px-4 py-2">Slug</x-table.heading>
+                    <x-table.heading class="px-4 py-2">Description</x-table.heading>
+                    <x-table.heading class="px-4 py-2">Image</x-table.heading>
+                    <x-table.heading sortable :direction="$sortField === 'status' ? $sortDirection : null" wire:click="sortBy('status')" class="px-4 py-2">Status</x-table.heading>
+                    <x-table.heading class="px-4 py-2">Action</x-table.heading>
                 </tr>
                 </thead>
                 <tbody>

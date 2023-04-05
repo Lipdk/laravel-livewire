@@ -2,21 +2,44 @@
 
 namespace App\Http\Livewire;
 
-use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use App\Models\Category as Categories;
 use Illuminate\Support\Str;
 use Livewire\WithFileUploads;
 use Livewire\WithPagination;
+use Illuminate\Support\Carbon;
+use App\Http\Livewire\DataTable\WithSorting;
+use App\Http\Livewire\DataTable\WithCachedRows;
+use App\Http\Livewire\DataTable\WithBulkAction;
+use App\Http\Livewire\DataTable\WithPerPagePagination;
 
 class Category extends Component
 {
     use WithFileUploads;
     use WithPagination;
+    use WithCachedRows;
+    use WithSorting;
+    use WithBulkAction;
+    use WithPerPagePagination;
 
     public $search = '', $name, $description, $slug, $parent_id, $image, $status, $category_id;
-    public $isOpen = 0;
+    public bool $showEditModal = false;
+
+    /** @var bool Advanced Filters */
+    public bool $showFilters = false;
+
     protected $listeners = ['delete'];
+    public string $sortField = 'id';
+    public string $sortDirection = 'desc';
+    public array $filters = [
+        'search' => '',
+        'status' => '',
+        'create-date-min' => null,
+        'create-date-max' => null,
+    ];
+
+    // Persist in the Query String the following variables
+    protected $queryString = ['sortField', 'sortDirection'];
 
     protected $rules = [
         'name' => 'required|min:3',
@@ -26,27 +49,30 @@ class Category extends Component
         'status' => 'boolean',
     ];
 
-    public function render()
+    public function sortBy($field)
     {
-        return view('livewire.category',  [
-            'categories' => Categories::search('name', $this->search)->paginate(10)
-        ]);
+        $this->sortDirection = $this->sortField === $field
+            ? $this->sortDirection = $this->sortDirection === 'asc' ? 'desc' : 'asc'
+            : 'asc';
+
+        $this->sortField = $field;
     }
 
     public function create()
     {
+        $this->useCachedRows();
         $this->resetFields();
         $this->openModal();
     }
 
     public function openModal()
     {
-        $this->isOpen = true;
+        $this->showEditModal = true;
     }
 
     public function closeModal()
     {
-        $this->isOpen = false;
+        $this->showEditModal = false;
     }
 
     public function resetFields()
@@ -59,6 +85,7 @@ class Category extends Component
         $this->status = true;
     }
 
+    // TODO: Move persisting logic to Category Model
     public function store()
     {
         if ($this->category_id) {
@@ -107,6 +134,7 @@ class Category extends Component
 
     public function edit($id)
     {
+        $this->useCachedRows();
         $category = Categories::findOrFail($id);
 
         $this->category_id = $category->id;
@@ -124,6 +152,18 @@ class Category extends Component
         $this->category_id = $id;
     }
 
+    public function resetFilters()
+    {
+        $this->reset('filters');
+    }
+
+    public function toggleShowFilters()
+    {
+        $this->useCachedRows();
+        $this->showFilters = ! $this->showFilters;
+    }
+
+    // TODO: Move persisting logic to Category Model
     public function delete()
     {
         if ($this->category_id) {
@@ -139,5 +179,35 @@ class Category extends Component
     public function removeImage()
     {
         $this->image = '';
+    }
+
+    public function getRowsQueryProperty()
+    {
+        $query = Categories::query()
+            ->when(array_key_exists($this->filters['status'], Categories::STATUSES), fn($query, $status) => $query->where('status', (int)$this->filters['status']))
+            ->when($this->filters['create-date-min'], fn($query, $date) => $query->where('created_at', '>=', Carbon::parse($this->filters['create-date-min'])))
+            ->when($this->filters['create-date-max'], fn($query, $date) => $query->where('created_at', '<=', Carbon::parse($this->filters['create-date-max'])))
+            ->when($this->filters['search'], fn($query, $search) => $query->where('name', 'like', '%'.$this->filters['search'].'%'));
+
+        return $this->applySorting($query);
+    }
+
+    public function getRowsProperty()
+    {
+        return $this->cache(function () {
+            return $this->applyPagination($this->rowsQuery);
+        });
+    }
+
+    public function render()
+    {
+//        return view('livewire.category',  [
+//            'categories' => Categories::search('name', $this->search)
+//                ->orderBy($this->sortField, $this->sortDirection)
+//                ->paginate(10)
+//        ]);
+        return view('livewire.category',  [
+            'categories' => $this->rows
+        ]);
     }
 }

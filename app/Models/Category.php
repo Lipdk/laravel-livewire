@@ -9,6 +9,11 @@ class Category extends Model
 {
     use HasFactory;
 
+    const STATUSES = [
+        '0' => 'Inactive',
+        '1' => 'Active',
+    ];
+
     protected $fillable = [
         'name',
         'slug',
